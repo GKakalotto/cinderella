@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Cinderella",
     "description": "公主请下班",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "permissions": [
         "alarms",
         "notifications",

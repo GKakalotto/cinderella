@@ -1,10 +1,17 @@
-let HHE = 18;
-let HHB = 9;
-let MM = 0;
-let work = {
-    begin: "09:00",
-    lunch: "12:00",
-    end: "18:00"
+class Reminder {
+    constructor(timeString) {
+        let args = timeString.split(":");
+
+        this.timeString = timeString;
+        this.hour = Number(args[0]);
+        this.minute = Number(args[1]);
+    }
+};
+
+let working = {
+    morning: new Reminder("09:00"),
+    noon: new Reminder("12:00"),
+    afternoon: new Reminder("18:00")
 };
 
 function MessageBox(title, message) {
@@ -17,48 +24,40 @@ function MessageBox(title, message) {
     });
 }
 
-function time_on_the_hour(now) {
-    const hh = now.getHours();
-    const now_s = now.toLocaleTimeString();
+function schedule(now) {
+    const hour = now.getHours();
+    const timeString = now.toLocaleTimeString();
 
-    if (hh > HHB && hh < HHE) {
-        if (now_s.includes("00:00")) {
-            let remainder = HHE - hh;
-            if (MM == 30) {
-                remainder -= 1;
-            }
+    if (timeString.includes(":00:00")) {
+        let deadline = working.afternoon.hour - hour;
+        if (working.afternoon.minute == 30) {
+            deadline += 0.5;
+        }
 
-            MessageBox("下班倒计时", `ヾ(◍°∇°◍)ﾉﾞ 坚持住，还有 ${remainder} 小时就下班了！`);
+        if (hour > working.morning.hour && deadline > 0) {
+            MessageBox("下班倒计时", `ヾ(◍°∇°◍)ﾉﾞ 坚持住，还有 ${deadline} 小时就下班了！`);
         }
     }
 
-    if (now_s == `${work.begin}:00`) {
+    if (timeString == `${working.morning.timeString}:00`) {
         MessageBox("公主请上班", "牛会哞，马会叫，牛马会收到！！！");
     }
 
-    if (now_s == `${work.lunch}:00`) {
+    if (timeString == `${working.noon.timeString}:00`) {
         MessageBox("公主请吃饭", "人是铁，饭是钢，一顿不吃饿得慌。");
     }
 
-    if (now_s == `${work.end}:00`) {
+    if (timeString == `${working.afternoon.timeString}:00`) {
         MessageBox("公主请下班", "来日纵是千千阕歌，飘于远方我路上~~~");
     }
 }
 
 function main() {
-    chrome.storage.local.get(["work_time"], work_time => {
-        if (work_time) {
-            chrome.storage.local.set({ "work_time": work });
-        }
-    });
-
-    chrome.storage.onChanged.addListener((changes, areaName) => {
-        work = changes["work_time"].newValue;
-        HHE = new Date(`2025-06-16T${work.end}:00`).getHours();
-        HHB = new Date(`2025-06-16T${work.begin}:00`).getHours();
-        MM = new Date(`2025-06-16T${work.end}:00`).getMinutes();
-        if (MM == 30) {
-            HHE += 1;
+    chrome.storage.local.get(["working"], value => {
+        if (value && value.working) {
+            working = value.working;
+        } else {
+            chrome.storage.local.set({"working": working});
         }
     });
 
@@ -68,8 +67,23 @@ function main() {
 
     chrome.alarms.onAlarm.addListener((alarm) => {
         if (alarm.name === 'oneSecondTimer') {
-            const now = new Date();
-            time_on_the_hour(now);
+            schedule(new Date());
+        }
+    });
+
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === "test") {
+            MessageBox("弹窗测试", "这是一条来自 Cinderella 插件的通知。");
+            return true;
+        }
+
+        if (message.type === "save") {
+            for (let i in message.data) {
+                working[i] = new Reminder(message.data[i]);
+            }
+
+            chrome.storage.local.set({"working": working});
+            return true;
         }
     });
 }

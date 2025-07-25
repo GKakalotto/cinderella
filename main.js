@@ -1,35 +1,28 @@
+let working = null;
+
 function main() {
     $ = el => {
         return document.getElementById(el);
     }
 
     $("save").addEventListener("click", e => {
-        let work = {
-            begin: $("begin").value,
-            lunch: $("lunch").value,
-            end: $("end").value
-        }
+        working.morning = $("morning").value;
+        working.noon = $("noon").value;
+        working.afternoon = $("afternoon").value;
 
-        chrome.storage.local.set({ "work_time": work });
+        chrome.runtime.sendMessage({ type: "save", data: working });
+        alert("保存成功！");
     });
 
     $("test").addEventListener("click", e => {
-        chrome.notifications.create({
-            type: 'basic',
-            iconUrl: "./image/icon.jpg",
-            title: "弹窗测试",
-            message: "这是一条来自 Cinderella 插件的通知。",
-            requireInteraction: true
-        });
+        chrome.runtime.sendMessage({ type: "test", data: null });
     });
 
-    chrome.storage.local.get(["work_time"], result => {
-        if (result) {
-            let work_time = result.work_time;
-            if (work_time) {
-                $("begin").value = work_time.begin;
-                $("lunch").value = work_time.lunch;
-                $("end").value = work_time.end;
+    chrome.storage.local.get(["working"], value => {
+        if (value && value.working) {
+            working = value.working;
+            for (let i in working) {
+                $(i).value = working[i].timeString;
             }
         }
     });
