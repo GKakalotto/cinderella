@@ -2,19 +2,22 @@
     "manifest_version": 3,
     "name": "Cinderella",
     "description": "公主请下班",
-    "version": "0.0.2",
+    "version": "0.1.0",
     "permissions": [
         "alarms",
         "notifications",
-        "storage"
+        "storage",
+        "windows",
+        "system.display"
     ],
     "background": {
         "service_worker": "server.js"
     },
     "options_page": "index.html",
     "icons": {
-        "16": "image/icon16.png",
-        "48": "image/icon48.png"
+        "16": "image/app.png",
+        "48": "image/app.png",
+        "68": "image/app.png"
     },
     "content_security_policy": {
         "script-src": "'self' 'unsafe-eval'",

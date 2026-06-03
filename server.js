@@ -14,14 +14,44 @@ let working = {
     afternoon: new Reminder("18:00")
 };
 
-function MessageBox(title, message) {
+function showNotification(title, message) {
     chrome.notifications.create({
         type: 'basic',
-        iconUrl: "./image/icon.jpg",
+        iconUrl: "./image/app.png",
         title: title,
         message: message,
         requireInteraction: true
     });
+}
+
+function showPopup(title, message) {
+    const params = new URLSearchParams({ title, message });
+    const url = chrome.runtime.getURL(`notification.html?${params}`);
+
+    chrome.system.display.getInfo(displays => {
+        const display = displays[0];
+        const width = 360;
+        const height = 240;
+        const left = Math.round(display.workArea.left + (display.workArea.width - width) / 2);
+        const top = Math.round(display.workArea.top + (display.workArea.height - height) / 2);
+
+        chrome.windows.create({
+            url,
+            type: "popup",
+            width,
+            height,
+            left,
+            top,
+            focused: true
+        }, win => {
+            chrome.windows.update(win.id, { focused: true, drawAttention: true });
+        });
+    });
+}
+
+function MessageBox(title, message) {
+    showNotification(title, message);
+    showPopup(title, message);
 }
 
 function schedule(now) {
@@ -48,7 +78,7 @@ function schedule(now) {
     }
 
     if (timeString == `${working.afternoon.timeString}:00`) {
-        MessageBox("公主请下班", "来日纵是千千阕歌，飘于远方我路上~~~");
+        MessageBox("公主请下班", "真厉害，又上了一天班(ง •_•)ง");
     }
 }
 
@@ -71,10 +101,10 @@ function main() {
         }
     });
 
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((message) => {
         if (message.type === "test") {
             MessageBox("弹窗测试", "这是一条来自 Cinderella 插件的通知。");
-            return true;
+            return;
         }
 
         if (message.type === "save") {
@@ -83,7 +113,6 @@ function main() {
             }
 
             chrome.storage.local.set({"working": working});
-            return true;
         }
     });
 }
