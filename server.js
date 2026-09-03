@@ -14,6 +14,8 @@ let working = {
     afternoon: new Reminder("18:00")
 };
 
+let popupEnabled = false;
+
 function showNotification(title, message) {
     chrome.notifications.create({
         type: 'basic',
@@ -51,7 +53,9 @@ function showPopup(title, message) {
 
 function MessageBox(title, message) {
     showNotification(title, message);
-    showPopup(title, message);
+    if (popupEnabled) {
+        showPopup(title, message);
+    }
 }
 
 function schedule(now) {
@@ -83,11 +87,16 @@ function schedule(now) {
 }
 
 function main() {
-    chrome.storage.local.get(["working"], value => {
+    chrome.storage.local.get(["working", "popupEnabled"], value => {
         if (value && value.working) {
             working = value.working;
         } else {
             chrome.storage.local.set({"working": working});
+        }
+        if (value && typeof value.popupEnabled === "boolean") {
+            popupEnabled = value.popupEnabled;
+        } else {
+            chrome.storage.local.set({"popupEnabled": popupEnabled});
         }
     });
 
@@ -112,7 +121,12 @@ function main() {
                 working[i] = new Reminder(message.data[i]);
             }
 
-            chrome.storage.local.set({"working": working});
+            popupEnabled = !!message.popupEnabled;
+
+            chrome.storage.local.set({
+                "working": working,
+                "popupEnabled": popupEnabled
+            });
         }
     });
 }
